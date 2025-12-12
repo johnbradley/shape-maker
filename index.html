@@ -98,13 +98,19 @@
             color: white;
         }
 
+        .btn-export-svg {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            color: white;
+        }
+
         .btn-clear {
             background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
             color: white;
         }
 
         .btn-export-image:disabled,
-        .btn-export-json:disabled {
+        .btn-export-json:disabled,
+        .btn-export-svg:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
@@ -142,6 +148,7 @@
 
         <div class="controls">
             <button id="exportImage" class="btn-export-image">📷 Export as Image</button>
+            <button id="exportSvg" class="btn-export-svg">🎨 Export as SVG</button>
             <button id="exportJson" class="btn-export-json">📄 Export as JSON</button>
             <button id="clear" class="btn-clear">🗑️ Clear Canvas</button>
         </div>
@@ -175,6 +182,7 @@
                 this.canvas.addEventListener('mouseleave', (e) => this.handleMouseLeave(e));
 
                 document.getElementById('exportImage').addEventListener('click', () => this.exportAsImage());
+                document.getElementById('exportSvg').addEventListener('click', () => this.exportAsSvg());
                 document.getElementById('exportJson').addEventListener('click', () => this.exportAsJson());
                 document.getElementById('clear').addEventListener('click', () => this.clearCanvas());
             }
@@ -320,10 +328,12 @@
                 pointCount.textContent = this.points.length;
 
                 const exportImageBtn = document.getElementById('exportImage');
+                const exportSvgBtn = document.getElementById('exportSvg');
                 const exportJsonBtn = document.getElementById('exportJson');
                 
                 const hasPolygon = this.points.length >= this.minPolygonPoints;
                 exportImageBtn.disabled = !hasPolygon;
+                exportSvgBtn.disabled = !hasPolygon;
                 exportJsonBtn.disabled = !hasPolygon;
             }
 
@@ -403,6 +413,53 @@
                 link.download = `polygon-${Date.now()}.png`;
                 link.href = tempCanvas.toDataURL('image/png');
                 link.click();
+            }
+
+            exportAsSvg() {
+                if (this.points.length < this.minPolygonPoints) {
+                    alert(`Please add at least ${this.minPolygonPoints} points to create a polygon before exporting.`);
+                    return;
+                }
+
+                // Calculate bounding box
+                const bbox = this.getBoundingBox();
+                const padding = 20; // Add some padding around the polygon
+                
+                // Calculate SVG dimensions
+                const svgX = Math.max(0, bbox.minX - padding);
+                const svgY = Math.max(0, bbox.minY - padding);
+                const svgWidth = bbox.maxX - bbox.minX + 2 * padding;
+                const svgHeight = bbox.maxY - bbox.minY + 2 * padding;
+
+                // Create SVG content
+                let svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="`;
+
+                // Add points to the polygon element (translated to SVG coordinate system)
+                const pointsStr = this.points.map(p => {
+                    const x = (p.x - svgX).toFixed(2);
+                    const y = (p.y - svgY).toFixed(2);
+                    return `${x},${y}`;
+                }).join(' ');
+
+                svgContent += pointsStr;
+                svgContent += `"
+           fill="rgba(102, 126, 234, 0.3)"
+           stroke="#667eea"
+           stroke-width="3" />
+</svg>`;
+
+                // Create blob and download
+                const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.download = `polygon-${Date.now()}.svg`;
+                link.href = url;
+                link.click();
+
+                URL.revokeObjectURL(url);
             }
 
             exportAsJson() {
