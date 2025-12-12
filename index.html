@@ -399,7 +399,11 @@
 
             getShapeName() {
                 const name = this.shapeNameInput.value.trim();
-                return name || 'shape';
+                if (!name) {
+                    return 'shape';
+                }
+                // Sanitize the filename by removing/replacing unsafe characters
+                return name.replace(/[\/\\:*?"<>|]/g, '-');
             }
 
             getBoundingBox() {
