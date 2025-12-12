@@ -253,14 +253,7 @@
                 this.draw();
             }
 
-            draw() {
-                // Clear canvas
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-                if (this.points.length === 0) {
-                    return;
-                }
-
+            drawPolygonOnly() {
                 // Draw polygon if we have at least the minimum required points
                 if (this.points.length >= this.minPolygonPoints) {
                     this.ctx.beginPath();
@@ -289,8 +282,20 @@
                     this.ctx.lineWidth = 3;
                     this.ctx.stroke();
                 }
+            }
 
-                // Draw points
+            draw() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.points.length === 0) {
+                    return;
+                }
+
+                // Draw polygon
+                this.drawPolygonOnly();
+
+                // Draw control points
                 this.points.forEach((point, index) => {
                     const isHovered = this.hoveredPoint === index;
                     const isDragging = this.draggingPoint === index;
@@ -328,11 +333,18 @@
                     return;
                 }
 
+                // Temporarily draw only the polygon without control points
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawPolygonOnly();
+
                 // Create a link element and trigger download
                 const link = document.createElement('a');
                 link.download = `polygon-${Date.now()}.png`;
                 link.href = this.canvas.toDataURL('image/png');
                 link.click();
+                
+                // Redraw with control points
+                this.draw();
             }
 
             exportAsJson() {
