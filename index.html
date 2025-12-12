@@ -171,7 +171,7 @@
 
         <div class="name-input-container">
             <label for="shapeName">Shape Name:</label>
-            <input type="text" id="shapeName" placeholder="Enter a name for your shape">
+            <input type="text" id="shapeName" placeholder="Enter a name for your shape" maxlength="100" aria-label="Shape name for export files">
         </div>
 
         <div class="canvas-container">
@@ -410,10 +410,12 @@
                 }
                 
                 // Sanitize the filename by removing/replacing unsafe characters
-                // Replace filesystem reserved characters
-                name = name.replace(/[\/\\:*?"<>|]/g, '-');
+                // Replace filesystem reserved characters and other problematic chars
+                name = name.replace(/[\/\\:*?"<>|%]/g, '-');
                 // Remove control characters
                 name = name.replace(/[\x00-\x1F\x7F]/g, '');
+                // Remove leading dots to prevent hidden files
+                name = name.replace(/^\.+/, '');
                 // Remove trailing dots and spaces
                 name = name.replace(/[\. ]+$/g, '');
                 // Ensure name is not empty after sanitization
