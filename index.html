@@ -227,8 +227,10 @@
                 this.minPolygonPoints = 3;
                 this.shapeNameInput = document.getElementById('shapeName');
                 
-                // Set a default generated name
-                this.shapeNameInput.value = generateShapeName();
+                // Set a default generated name if input exists
+                if (this.shapeNameInput) {
+                    this.shapeNameInput.value = generateShapeName();
+                }
                 
                 this.setupEventListeners();
                 this.draw();
@@ -398,12 +400,24 @@
             }
 
             getShapeName() {
-                const name = this.shapeNameInput.value.trim();
+                if (!this.shapeNameInput) {
+                    return 'shape';
+                }
+                
+                let name = this.shapeNameInput.value.trim();
                 if (!name) {
                     return 'shape';
                 }
+                
                 // Sanitize the filename by removing/replacing unsafe characters
-                return name.replace(/[\/\\:*?"<>|]/g, '-');
+                // Replace filesystem reserved characters
+                name = name.replace(/[\/\\:*?"<>|]/g, '-');
+                // Remove control characters
+                name = name.replace(/[\x00-\x1F\x7F]/g, '');
+                // Remove trailing dots and spaces
+                name = name.replace(/[\. ]+$/g, '');
+                // Ensure name is not empty after sanitization
+                return name || 'shape';
             }
 
             getBoundingBox() {
