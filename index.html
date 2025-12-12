@@ -327,24 +327,82 @@
                 exportJsonBtn.disabled = !hasPolygon;
             }
 
+            getBoundingBox() {
+                if (this.points.length === 0) {
+                    return null;
+                }
+
+                let minX = this.points[0].x;
+                let minY = this.points[0].y;
+                let maxX = this.points[0].x;
+                let maxY = this.points[0].y;
+
+                for (let i = 1; i < this.points.length; i++) {
+                    minX = Math.min(minX, this.points[i].x);
+                    minY = Math.min(minY, this.points[i].y);
+                    maxX = Math.max(maxX, this.points[i].x);
+                    maxY = Math.max(maxY, this.points[i].y);
+                }
+
+                return { minX, minY, maxX, maxY };
+            }
+
             exportAsImage() {
                 if (this.points.length < this.minPolygonPoints) {
                     alert(`Please add at least ${this.minPolygonPoints} points to create a polygon before exporting.`);
                     return;
                 }
 
-                // Temporarily draw only the polygon without control points
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.drawPolygonOnly();
+                // Calculate bounding box
+                const bbox = this.getBoundingBox();
+                const padding = 20; // Add some padding around the polygon
+                
+                // Calculate cropped dimensions
+                const cropX = Math.max(0, bbox.minX - padding);
+                const cropY = Math.max(0, bbox.minY - padding);
+                const desiredWidth = bbox.maxX - bbox.minX + 2 * padding;
+                const desiredHeight = bbox.maxY - bbox.minY + 2 * padding;
+                const cropWidth = Math.min(this.canvas.width - cropX, desiredWidth);
+                const cropHeight = Math.min(this.canvas.height - cropY, desiredHeight);
+
+                // Create a temporary canvas for the cropped image
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = cropWidth;
+                tempCanvas.height = cropHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // Translate points to the new coordinate system
+                const translatedPoints = this.points.map(p => ({
+                    x: p.x - cropX,
+                    y: p.y - cropY
+                }));
+
+                // Draw polygon on the temporary canvas
+                if (translatedPoints.length >= this.minPolygonPoints) {
+                    tempCtx.beginPath();
+                    tempCtx.moveTo(translatedPoints[0].x, translatedPoints[0].y);
+                    
+                    for (let i = 1; i < translatedPoints.length; i++) {
+                        tempCtx.lineTo(translatedPoints[i].x, translatedPoints[i].y);
+                    }
+                    
+                    tempCtx.closePath();
+                    
+                    // Fill polygon
+                    tempCtx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+                    tempCtx.fill();
+                    
+                    // Stroke polygon
+                    tempCtx.strokeStyle = '#667eea';
+                    tempCtx.lineWidth = 3;
+                    tempCtx.stroke();
+                }
 
                 // Create a link element and trigger download
                 const link = document.createElement('a');
                 link.download = `polygon-${Date.now()}.png`;
-                link.href = this.canvas.toDataURL('image/png');
+                link.href = tempCanvas.toDataURL('image/png');
                 link.click();
-                
-                // Redraw with control points
-                this.draw();
             }
 
             exportAsJson() {
