@@ -360,8 +360,10 @@
                 // Calculate cropped dimensions
                 const cropX = Math.max(0, bbox.minX - padding);
                 const cropY = Math.max(0, bbox.minY - padding);
-                const cropWidth = Math.min(this.canvas.width - cropX, bbox.maxX - bbox.minX + 2 * padding);
-                const cropHeight = Math.min(this.canvas.height - cropY, bbox.maxY - bbox.minY + 2 * padding);
+                const desiredWidth = bbox.maxX - bbox.minX + 2 * padding;
+                const desiredHeight = bbox.maxY - bbox.minY + 2 * padding;
+                const cropWidth = Math.min(this.canvas.width - cropX, desiredWidth);
+                const cropHeight = Math.min(this.canvas.height - cropY, desiredHeight);
 
                 // Create a temporary canvas for the cropped image
                 const tempCanvas = document.createElement('canvas');
