@@ -166,6 +166,7 @@
             <p><strong>How to use:</strong></p>
             <p>• Click on the canvas to add points to your polygon</p>
             <p>• Drag existing points to move them around</p>
+            <p>• Double-click on a point to remove it</p>
             <p>• The polygon will automatically close when you have 3 or more points</p>
         </div>
 
@@ -242,6 +243,7 @@
                 this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
                 this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
                 this.canvas.addEventListener('mouseleave', (e) => this.handleMouseLeave(e));
+                this.canvas.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
 
                 document.getElementById('exportImage').addEventListener('click', () => this.exportAsImage());
                 document.getElementById('exportSvg').addEventListener('click', () => this.exportAsSvg());
@@ -321,6 +323,24 @@
                 this.hoveredPoint = null;
                 this.canvas.style.cursor = 'crosshair';
                 this.draw();
+            }
+
+            handleDoubleClick(e) {
+                const pos = this.getMousePos(e);
+                const pointIndex = this.findPointAtPosition(pos);
+
+                if (pointIndex !== null) {
+                    // Remove the point
+                    this.points.splice(pointIndex, 1);
+                    
+                    // Reset states
+                    this.draggingPoint = null;
+                    this.hoveredPoint = null;
+                    
+                    // Update UI and redraw
+                    this.updateUI();
+                    this.draw();
+                }
             }
 
             drawPolygonOnly() {
