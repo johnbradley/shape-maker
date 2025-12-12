@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Maker - Polygon Creator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+        }
+
+        .canvas-container {
+            position: relative;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: crosshair;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-export-image {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-export-json {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-clear {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+
+        .btn-export-image:disabled,
+        .btn-export-json:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f4f8;
+            border-radius: 8px;
+            color: #333;
+        }
+
+        .point-count {
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔷 Shape Maker - Polygon Creator</h1>
+        
+        <div class="instructions">
+            <p><strong>How to use:</strong></p>
+            <p>• Click on the canvas to add points to your polygon</p>
+            <p>• Drag existing points to move them around</p>
+            <p>• The polygon will automatically close when you have 3 or more points</p>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+
+        <div class="controls">
+            <button id="exportImage" class="btn-export-image">📷 Export as Image</button>
+            <button id="exportJson" class="btn-export-json">📄 Export as JSON</button>
+            <button id="clear" class="btn-clear">🗑️ Clear Canvas</button>
+        </div>
+
+        <div class="info">
+            <p>Points in polygon: <span class="point-count" id="pointCount">0</span></p>
+        </div>
+    </div>
+
+    <script>
+        class PolygonCreator {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.points = [];
+                this.draggingPoint = null;
+                this.hoveredPoint = null;
+                this.pointRadius = 8;
+                this.hoverRadius = 12;
+                this.minPolygonPoints = 3;
+                
+                this.setupEventListeners();
+                this.draw();
+                this.updateUI();
+            }
+
+            setupEventListeners() {
+                this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+                this.canvas.addEventListener('mouseleave', (e) => this.handleMouseLeave(e));
+
+                document.getElementById('exportImage').addEventListener('click', () => this.exportAsImage());
+                document.getElementById('exportJson').addEventListener('click', () => this.exportAsJson());
+                document.getElementById('clear').addEventListener('click', () => this.clearCanvas());
+            }
+
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+
+            findPointAtPosition(pos) {
+                for (let i = 0; i < this.points.length; i++) {
+                    const point = this.points[i];
+                    const distance = Math.sqrt(
+                        Math.pow(pos.x - point.x, 2) + Math.pow(pos.y - point.y, 2)
+                    );
+                    if (distance <= this.pointRadius) {
+                        return i;
+                    }
+                }
+                return null;
+            }
+
+            handleMouseDown(e) {
+                const pos = this.getMousePos(e);
+                const pointIndex = this.findPointAtPosition(pos);
+
+                if (pointIndex !== null) {
+                    // Start dragging an existing point
+                    this.draggingPoint = pointIndex;
+                    this.canvas.style.cursor = 'grabbing';
+                } else {
+                    // Add a new point
+                    this.points.push(pos);
+                    this.updateUI();
+                    this.draw();
+                }
+            }
+
+            handleMouseMove(e) {
+                const pos = this.getMousePos(e);
+
+                if (this.draggingPoint !== null) {
+                    // Update the position of the dragged point
+                    this.points[this.draggingPoint] = pos;
+                    this.draw();
+                } else {
+                    // Check if hovering over a point
+                    const pointIndex = this.findPointAtPosition(pos);
+                    if (pointIndex !== null) {
+                        this.hoveredPoint = pointIndex;
+                        this.canvas.style.cursor = 'grab';
+                    } else {
+                        this.hoveredPoint = null;
+                        this.canvas.style.cursor = 'crosshair';
+                    }
+                    this.draw();
+                }
+            }
+
+            handleMouseUp(e) {
+                if (this.draggingPoint !== null) {
+                    this.draggingPoint = null;
+                    this.canvas.style.cursor = 'crosshair';
+                }
+            }
+
+            handleMouseLeave(e) {
+                if (this.draggingPoint !== null) {
+                    this.draggingPoint = null;
+                }
+                this.hoveredPoint = null;
+                this.canvas.style.cursor = 'crosshair';
+                this.draw();
+            }
+
+            draw() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.points.length === 0) {
+                    return;
+                }
+
+                // Draw polygon if we have at least the minimum required points
+                if (this.points.length >= this.minPolygonPoints) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.points[0].x, this.points[0].y);
+                    
+                    for (let i = 1; i < this.points.length; i++) {
+                        this.ctx.lineTo(this.points[i].x, this.points[i].y);
+                    }
+                    
+                    this.ctx.closePath();
+                    
+                    // Fill polygon
+                    this.ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+                    this.ctx.fill();
+                    
+                    // Stroke polygon
+                    this.ctx.strokeStyle = '#667eea';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                } else if (this.points.length === 2) {
+                    // Draw line between two points
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.points[0].x, this.points[0].y);
+                    this.ctx.lineTo(this.points[1].x, this.points[1].y);
+                    this.ctx.strokeStyle = '#667eea';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                }
+
+                // Draw points
+                this.points.forEach((point, index) => {
+                    const isHovered = this.hoveredPoint === index;
+                    const isDragging = this.draggingPoint === index;
+                    
+                    this.ctx.beginPath();
+                    const radius = (isHovered || isDragging) ? this.hoverRadius : this.pointRadius;
+                    this.ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+                    
+                    // Fill point
+                    this.ctx.fillStyle = isDragging ? '#f5576c' : (isHovered ? '#764ba2' : '#667eea');
+                    this.ctx.fill();
+                    
+                    // Stroke point
+                    this.ctx.strokeStyle = 'white';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+                });
+            }
+
+            updateUI() {
+                const pointCount = document.getElementById('pointCount');
+                pointCount.textContent = this.points.length;
+
+                const exportImageBtn = document.getElementById('exportImage');
+                const exportJsonBtn = document.getElementById('exportJson');
+                
+                const hasPolygon = this.points.length >= this.minPolygonPoints;
+                exportImageBtn.disabled = !hasPolygon;
+                exportJsonBtn.disabled = !hasPolygon;
+            }
+
+            exportAsImage() {
+                if (this.points.length < this.minPolygonPoints) {
+                    alert(`Please add at least ${this.minPolygonPoints} points to create a polygon before exporting.`);
+                    return;
+                }
+
+                // Create a link element and trigger download
+                const link = document.createElement('a');
+                link.download = `polygon-${Date.now()}.png`;
+                link.href = this.canvas.toDataURL('image/png');
+                link.click();
+            }
+
+            exportAsJson() {
+                if (this.points.length < this.minPolygonPoints) {
+                    alert(`Please add at least ${this.minPolygonPoints} points to create a polygon before exporting.`);
+                    return;
+                }
+
+                const data = {
+                    polygon: {
+                        points: this.points.map(p => ({
+                            x: Math.round(p.x * 100) / 100,
+                            y: Math.round(p.y * 100) / 100
+                        })),
+                        pointCount: this.points.length,
+                        closed: true,
+                        exportDate: new Date().toISOString()
+                    }
+                };
+
+                const jsonString = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.download = `polygon-points-${Date.now()}.json`;
+                link.href = url;
+                link.click();
+
+                URL.revokeObjectURL(url);
+            }
+
+            clearCanvas() {
+                if (this.points.length > 0) {
+                    if (confirm('Are you sure you want to clear all points?')) {
+                        this.points = [];
+                        this.draggingPoint = null;
+                        this.hoveredPoint = null;
+                        this.draw();
+                        this.updateUI();
+                    }
+                }
+            }
+        }
+
+        // Initialize the polygon creator when the page loads
+        const polygonCreator = new PolygonCreator('canvas');
+    </script>
+</body>
+</html>
