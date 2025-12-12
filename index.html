@@ -253,14 +253,7 @@
                 this.draw();
             }
 
-            draw() {
-                // Clear canvas
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-                if (this.points.length === 0) {
-                    return;
-                }
-
+            drawPolygonOnly() {
                 // Draw polygon if we have at least the minimum required points
                 if (this.points.length >= this.minPolygonPoints) {
                     this.ctx.beginPath();
@@ -289,8 +282,20 @@
                     this.ctx.lineWidth = 3;
                     this.ctx.stroke();
                 }
+            }
 
-                // Draw points
+            draw() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.points.length === 0) {
+                    return;
+                }
+
+                // Draw polygon
+                this.drawPolygonOnly();
+
+                // Draw control points
                 this.points.forEach((point, index) => {
                     const isHovered = this.hoveredPoint === index;
                     const isDragging = this.draggingPoint === index;
@@ -330,25 +335,7 @@
 
                 // Temporarily draw only the polygon without control points
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Draw polygon
-                this.ctx.beginPath();
-                this.ctx.moveTo(this.points[0].x, this.points[0].y);
-                
-                for (let i = 1; i < this.points.length; i++) {
-                    this.ctx.lineTo(this.points[i].x, this.points[i].y);
-                }
-                
-                this.ctx.closePath();
-                
-                // Fill polygon
-                this.ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
-                this.ctx.fill();
-                
-                // Stroke polygon
-                this.ctx.strokeStyle = '#667eea';
-                this.ctx.lineWidth = 3;
-                this.ctx.stroke();
+                this.drawPolygonOnly();
 
                 // Create a link element and trigger download
                 const link = document.createElement('a');
