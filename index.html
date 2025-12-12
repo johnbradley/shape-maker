@@ -578,6 +578,12 @@
                 // Remove # if present
                 hex = hex.replace('#', '');
                 
+                // Validate hex format
+                if (!/^[0-9A-Fa-f]{6}$/.test(hex)) {
+                    // Return a default color if invalid
+                    return `rgba(102, 126, 234, ${alpha})`;
+                }
+                
                 // Parse hex values
                 const r = parseInt(hex.substring(0, 2), 16);
                 const g = parseInt(hex.substring(2, 4), 16);
