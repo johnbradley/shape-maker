@@ -333,9 +333,22 @@
                     // Remove the point
                     this.points.splice(pointIndex, 1);
                     
-                    // Reset states
-                    this.draggingPoint = null;
-                    this.hoveredPoint = null;
+                    // Adjust indices for remaining state variables
+                    if (this.draggingPoint !== null) {
+                        if (this.draggingPoint === pointIndex) {
+                            this.draggingPoint = null;
+                        } else if (this.draggingPoint > pointIndex) {
+                            this.draggingPoint--;
+                        }
+                    }
+                    
+                    if (this.hoveredPoint !== null) {
+                        if (this.hoveredPoint === pointIndex) {
+                            this.hoveredPoint = null;
+                        } else if (this.hoveredPoint > pointIndex) {
+                            this.hoveredPoint--;
+                        }
+                    }
                     
                     // Update UI and redraw
                     this.updateUI();
