@@ -5,7 +5,7 @@
 **shape-maker** is a single-page web application for creating polygons interactively on HTML5 canvas, with PNG/SVG/JSON export capabilities. Written entirely in vanilla JavaScript with embedded HTML/CSS in one file.
 
 ### Key Stats
-- **Type**: Static web app (single HTML file, ~670 lines)
+- **Type**: Static web app (single HTML file, 630 lines)
 - **Languages**: HTML, CSS, JavaScript (all in index.html)
 - **Dependencies**: None (no build tools, no npm packages)
 - **Runtime**: Modern web browsers
