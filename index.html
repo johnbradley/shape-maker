@@ -161,6 +161,7 @@
                 this.hoveredPoint = null;
                 this.pointRadius = 8;
                 this.hoverRadius = 12;
+                this.minPolygonPoints = 3;
                 
                 this.setupEventListeners();
                 this.draw();
@@ -260,8 +261,8 @@
                     return;
                 }
 
-                // Draw polygon if we have at least 3 points
-                if (this.points.length >= 3) {
+                // Draw polygon if we have at least the minimum required points
+                if (this.points.length >= this.minPolygonPoints) {
                     this.ctx.beginPath();
                     this.ctx.moveTo(this.points[0].x, this.points[0].y);
                     
@@ -316,14 +317,14 @@
                 const exportImageBtn = document.getElementById('exportImage');
                 const exportJsonBtn = document.getElementById('exportJson');
                 
-                const hasPolygon = this.points.length >= 3;
+                const hasPolygon = this.points.length >= this.minPolygonPoints;
                 exportImageBtn.disabled = !hasPolygon;
                 exportJsonBtn.disabled = !hasPolygon;
             }
 
             exportAsImage() {
-                if (this.points.length < 3) {
-                    alert('Please add at least 3 points to create a polygon before exporting.');
+                if (this.points.length < this.minPolygonPoints) {
+                    alert(`Please add at least ${this.minPolygonPoints} points to create a polygon before exporting.`);
                     return;
                 }
 
@@ -335,8 +336,8 @@
             }
 
             exportAsJson() {
-                if (this.points.length < 3) {
-                    alert('Please add at least 3 points to create a polygon before exporting.');
+                if (this.points.length < this.minPolygonPoints) {
+                    alert(`Please add at least ${this.minPolygonPoints} points to create a polygon before exporting.`);
                     return;
                 }
 
