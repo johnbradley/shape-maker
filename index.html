@@ -555,20 +555,48 @@
             }
 
             drawGrid() {
+                // Draw light gray lines first (every non-4th line)
+                this.ctx.beginPath();
+                this.ctx.strokeStyle = '#e0e0e0';
+                this.ctx.lineWidth = 1;
+                
+                // Draw vertical lines (light gray)
+                for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
+                    if ((x / this.gridSize) % 4 !== 0) {
+                        this.ctx.moveTo(x, 0);
+                        this.ctx.lineTo(x, this.canvas.height);
+                    }
+                }
+                
+                // Draw horizontal lines (light gray)
+                for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
+                    if ((y / this.gridSize) % 4 !== 0) {
+                        this.ctx.moveTo(0, y);
+                        this.ctx.lineTo(this.canvas.width, y);
+                    }
+                }
+                
+                this.ctx.stroke();
+                
+                // Draw medium gray lines (every 4th line)
                 this.ctx.beginPath();
                 this.ctx.strokeStyle = '#b0b0b0';
                 this.ctx.lineWidth = 1;
                 
-                // Draw vertical lines
+                // Draw vertical lines (medium gray)
                 for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
-                    this.ctx.moveTo(x, 0);
-                    this.ctx.lineTo(x, this.canvas.height);
+                    if ((x / this.gridSize) % 4 === 0) {
+                        this.ctx.moveTo(x, 0);
+                        this.ctx.lineTo(x, this.canvas.height);
+                    }
                 }
                 
-                // Draw horizontal lines
+                // Draw horizontal lines (medium gray)
                 for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
-                    this.ctx.moveTo(0, y);
-                    this.ctx.lineTo(this.canvas.width, y);
+                    if ((y / this.gridSize) % 4 === 0) {
+                        this.ctx.moveTo(0, y);
+                        this.ctx.lineTo(this.canvas.width, y);
+                    }
                 }
                 
                 this.ctx.stroke();
